@@ -43,6 +43,14 @@
 #define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
+#define PRESSED      1      // input switch state
+#define NOT_PRESSED  0      // input switch state
+#define AT_LIMIT     1      // limit position sensor state
+#define NOT_AT_LIMIT 0      // limit position sensor state
+#define AT_HOME      1      // home position sensor state
+#define NOT_AT_HOME  0      // home position sensor state
+#define PH_FWD       1      // motor driver PH input = forward
+#define PH_REV       0      // motor driver PH input = reverse
 
 // *******************************************************************
 // Global Variables
@@ -52,6 +60,13 @@ float SP_current;     // offset-corrected ADC reading scaled to current
 int   SP_offset;      // ADC reading with 0 motor current
 float FR_current;
 int   FR_offset;
+int   forward  = NOT_PRESSED;
+int   reverse  = NOT_PRESSED;
+int   SP_limit = NOT_AT_LIMIT;
+int   FR_limit = NOT_AT_LIMIT;
+int   SP_home  = NOT_AT_HOME;
+int   FR_home  = NOT_AT_HOME;
+int   timeout  = 0;
 
 // *******************************************************************
 // Function Prototypes
@@ -77,27 +92,27 @@ void setup() {
 
   Wire.begin();
 
-  pinMode(SP_HOME_PIN, INPUT_PULLUP);
+  pinMode(SP_HOME_PIN,  INPUT_PULLUP);
   pinMode(SP_LIMIT_PIN, INPUT_PULLUP);
-  pinMode(FR_HOME_PIN, INPUT_PULLUP);
+  pinMode(FR_HOME_PIN,  INPUT_PULLUP);
   pinMode(FR_LIMIT_PIN, INPUT_PULLUP);
   pinMode(SW1_PIN, INPUT_PULLUP);
   pinMode(SW2_PIN, INPUT_PULLUP);
   pinMode(SW3_PIN, INPUT_PULLUP);
   pinMode(SW4_PIN, INPUT_PULLUP);
 
-  pinMode(SP_MOT_PH_PIN, OUTPUT);
-  pinMode(SP_MOT_EN_PIN, OUTPUT);
+  pinMode(SP_MOT_PH_PIN,  OUTPUT);
+  pinMode(SP_MOT_EN_PIN,  OUTPUT);
   pinMode(SP_MOT_SLP_PIN, OUTPUT);
-  pinMode(FR_MOT_PH_PIN, OUTPUT);
-  pinMode(FR_MOT_PH_PIN, OUTPUT);
+  pinMode(FR_MOT_PH_PIN,  OUTPUT);
+  pinMode(FR_MOT_EN_PIN,  OUTPUT);
   pinMode(FR_MOT_SLP_PIN, OUTPUT);
 
-  digitalWrite(SP_MOT_PH_PIN, LOW);
-  digitalWrite(SP_MOT_EN_PIN, LOW);
+  digitalWrite(SP_MOT_PH_PIN,  LOW);
+  digitalWrite(SP_MOT_EN_PIN,  LOW);
   digitalWrite(SP_MOT_SLP_PIN, LOW);
-  digitalWrite(FR_MOT_PH_PIN, LOW);
-  digitalWrite(FR_MOT_PH_PIN, LOW);
+  digitalWrite(FR_MOT_PH_PIN,  LOW);
+  digitalWrite(FR_MOT_EN_PIN,  LOW);
   digitalWrite(FR_MOT_SLP_PIN, LOW);
 
   getSeatpanOffset();
