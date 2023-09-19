@@ -90,14 +90,14 @@ void setup() {
 
   Wire.begin();
 
-  pinMode(SP_HOME_PIN,  INPUT_PULLUP);
-  pinMode(SP_LIMIT_PIN, INPUT_PULLUP);
-  pinMode(FR_HOME_PIN,  INPUT_PULLUP);
-  pinMode(FR_LIMIT_PIN, INPUT_PULLUP);
-  pinMode(SW1_PIN, INPUT_PULLUP);
-  pinMode(SW2_PIN, INPUT_PULLUP);
-  pinMode(SW3_PIN, INPUT_PULLUP);
-  pinMode(SW4_PIN, INPUT_PULLUP);
+  pinMode(SP_HOME_PIN,  INPUT);
+  pinMode(SP_LIMIT_PIN, INPUT);
+  pinMode(FR_HOME_PIN,  INPUT);
+  pinMode(FR_LIMIT_PIN, INPUT);
+  pinMode(SW1_PIN, INPUT);
+  pinMode(SW2_PIN, INPUT);
+  pinMode(SW3_PIN, INPUT);
+  pinMode(SW4_PIN, INPUT);
 
   pinMode(SP_MOT_PH_PIN,  OUTPUT);
   pinMode(SP_MOT_EN_PIN,  OUTPUT);
