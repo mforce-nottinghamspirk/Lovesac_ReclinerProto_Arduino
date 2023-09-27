@@ -1,5 +1,5 @@
 // LovesacState1.ino
-// Nottingham Spirk, September 25, 2023
+// Nottingham Spirk, September 27, 2023
 //
 // This sketch implements a simplified state machine.
 //   no timeout monitoring
@@ -15,8 +15,8 @@
 // *******************************************************************
 // Hardware Pins
 // *******************************************************************
-#define SP_HOME_PIN     0   // input
-#define SP_LIMIT_PIN    1   // input
+//#define SP_HOME_PIN   0   // input, reserved for Debug UART
+//#define SP_LIMIT_PIN  1   // input, reserved for Debug UART
 #define SW1_PIN         2   // input, high = closed
 #define SW2_PIN         3   // input, high = closed
 #define unused_4_PIN    4
@@ -36,11 +36,11 @@
 // *******************************************************************
 // Constants
 // *******************************************************************
-#define ADC_VREF  3.3       // default AREF
+#define ADC_VREF  3.3       // default AREF (V)
 #define ADC_COUNT 1024.0    // 10-bit ADC
-#define ADC_SAMPLES 100     // samples for average
+#define ADC_SAMPLES 10      // samples for average
 #define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
-#define CUR_THRESH 0.010    // limit for "0" current
+#define CUR_THRESH 0.010    // limit for "0" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
 #define PRESSED      1      // input switch state
@@ -53,12 +53,14 @@
 #define PH_REV       0      // motor driver PH input = reverse
 #define ACTIVE       1      // motor driver nSLEEP input = active/run
 #define SLEEP        0      // motor driver nSLEEP input = sleep/off
-#define STATE_INIT	  0
-#define STATE_IDLE	  1
-#define STATE_REC_FR  2
-#define STATE_REC_SP  3
-#define STATE_HOME_SP 4
-#define STATE_HOME_FR 5
+#define STATE_INIT	    0
+#define STATE_IDLE	    1
+#define STATE_REC_FR    2
+#define STATE_REC_SP    3
+#define STATE_REC_WAIT  4
+#define STATE_HOME_SP   5
+#define STATE_HOME_FR   6
+#define STATE_HOME_WAIT 7
 
 
 // *******************************************************************
@@ -84,7 +86,8 @@ int   state    = STATE_INIT;
 // *******************************************************************
 void  getSeatpanOffset(void);
 void  getFootrestOffset(void);
-float readSeatpanCurrent(void);float readFootrestCurrent(void);
+float readSeatpanCurrent(void);
+float readFootrestCurrent(void);
 void  readBattery(void);
 
 
@@ -96,14 +99,14 @@ void setup() {
   while (!Serial) { delay(10); }
   Serial.begin(115200);
   Serial.println(F("*************************************"));
-  Serial.println(F("Lovesac Current Test"));
+  Serial.println(F("Lovesac Simple State Machine"));
   Serial.print(F("Analog Samples = "));
   Serial.println(ADC_SAMPLES);
   Serial.println(__DATE__ "  Compiler Version: " __VERSION__);
   Serial.println(F("*************************************"));
 
-  pinMode(SP_HOME_PIN,  INPUT);
-  pinMode(SP_LIMIT_PIN, INPUT);
+//  pinMode(SP_HOME_PIN,  INPUT);
+//  pinMode(SP_LIMIT_PIN, INPUT);
   pinMode(FR_HOME_PIN,  INPUT);
   pinMode(FR_LIMIT_PIN, INPUT);
   pinMode(SW1_PIN, INPUT);
@@ -144,16 +147,16 @@ void loop() {
 
   // read the motor currents
   SP_current = readSeatpanCurrent();
-  dtostrf(SP_current, 4, 3, buf);
-  Serial.print(F("SeatPan Current  = "));
-  Serial.print(buf);
-  Serial.println("A");
+  // dtostrf(SP_current, 4, 3, buf);
+  // Serial.print(F("SeatPan Current  = "));
+  // Serial.print(buf);
+  // Serial.println("A");
  
   FR_current = readFootrestCurrent();
-  dtostrf(FR_current, 4, 3, buf);
-  Serial.print(F("FootRest Current  = "));
-  Serial.print(buf);
-  Serial.println("A");
+  // dtostrf(FR_current, 4, 3, buf);
+  // Serial.print(F("FootRest Current  = "));
+  // Serial.print(buf);
+  // Serial.println("A");
 
   switch (state) {
 
@@ -165,6 +168,7 @@ void loop() {
       analogWrite(FR_MOT_EN_PIN,  0);
       digitalWrite(FR_MOT_SLP_PIN, SLEEP);
       state = STATE_IDLE;
+      Serial.println("State => Idle");
       break;
 
     case STATE_IDLE:
@@ -177,9 +181,11 @@ void loop() {
 
       if (forward==PRESSED) {
         state = STATE_REC_FR;
+        Serial.println("State => Recline Footrest");
       }
       else if (reverse==PRESSED) {
         state = STATE_HOME_SP;
+        Serial.println("State => Home Seatpan");
       }
       break;
 
@@ -191,9 +197,11 @@ void loop() {
 
       if (forward == NOT_PRESSED) {
         state = STATE_IDLE;
+        Serial.println("State => Idle");
       }
       else if (FR_current < CUR_THRESH) {
         state = STATE_REC_SP;
+        Serial.println("State => Recline Seatpan");
       }
       break;
 
@@ -205,9 +213,23 @@ void loop() {
 
       if (forward == NOT_PRESSED) {
         state = STATE_IDLE;
+        Serial.println("State => Idle");
       }
       else if (SP_current < CUR_THRESH) {
+        state = STATE_REC_WAIT;
+        Serial.println("State => Recline Wait");
+      }
+      break;
+
+    case STATE_REC_WAIT:
+      digitalWrite(SP_MOT_PH_PIN, PH_FWD);
+      analogWrite(SP_MOT_EN_PIN, 0);
+      digitalWrite(FR_MOT_PH_PIN, PH_FWD);
+      analogWrite(FR_MOT_EN_PIN, 0);
+
+      if (forward == NOT_PRESSED) {
         state = STATE_IDLE;
+        Serial.println("State => Idle");
       }
       break;
 
@@ -219,9 +241,11 @@ void loop() {
 
       if (reverse==NOT_PRESSED) {
         state = STATE_IDLE;
+        Serial.println("State => Idle");
       }
       else if (SP_current < CUR_THRESH) {
         state = STATE_HOME_FR;
+        Serial.println("State => Home Footrest");
       }
       break;
 
@@ -233,10 +257,24 @@ void loop() {
 
       if (reverse==NOT_PRESSED) {
         state = STATE_IDLE;
+        Serial.println("State => Idle");
       }
       else if (FR_current < CUR_THRESH) {
-        state = STATE_IDLE;
+        state = STATE_HOME_WAIT;
+        Serial.println("State => Home Wait");
        }
+      break;
+
+    case STATE_HOME_WAIT:
+      digitalWrite(SP_MOT_PH_PIN, PH_REV);
+      analogWrite(SP_MOT_EN_PIN, 0);
+      digitalWrite(FR_MOT_PH_PIN, PH_REV);
+      analogWrite(FR_MOT_EN_PIN, 0);
+
+      if (reverse==NOT_PRESSED) {
+        state = STATE_IDLE;
+        Serial.println("State => Idle");
+      }
       break;
 
     default:
