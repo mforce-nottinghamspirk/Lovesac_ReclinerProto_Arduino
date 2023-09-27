@@ -40,7 +40,7 @@
 #define ADC_COUNT 1024.0    // 10-bit ADC
 #define ADC_SAMPLES 10      // samples for average
 #define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
-#define CUR_THRESH 0.010    // limit for "0" current (A)
+#define CUR_THRESH 0.020    // limit for "0" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
 #define PRESSED      1      // input switch state
@@ -146,13 +146,13 @@ void loop() {
   reverse = digitalRead(SW2_PIN);
 
   // read the motor currents
-  SP_current = readSeatpanCurrent();
+  // SP_current = readSeatpanCurrent();
   // dtostrf(SP_current, 4, 3, buf);
   // Serial.print(F("SeatPan Current  = "));
   // Serial.print(buf);
   // Serial.println("A");
  
-  FR_current = readFootrestCurrent();
+  // FR_current = readFootrestCurrent();
   // dtostrf(FR_current, 4, 3, buf);
   // Serial.print(F("FootRest Current  = "));
   // Serial.print(buf);
@@ -195,6 +195,13 @@ void loop() {
       digitalWrite(FR_MOT_PH_PIN, PH_FWD);
       analogWrite(FR_MOT_EN_PIN, 255);
 
+      delay(10);    // delay to let motor start
+      FR_current = readFootrestCurrent();
+      dtostrf(FR_current, 4, 3, buf);
+      Serial.print(F("FootRest Current  = "));
+      Serial.print(buf);
+      Serial.println("A");
+
       if (forward == NOT_PRESSED) {
         state = STATE_IDLE;
         Serial.println("State => Idle");
@@ -210,6 +217,13 @@ void loop() {
       analogWrite(SP_MOT_EN_PIN, 255);
       digitalWrite(FR_MOT_PH_PIN, PH_FWD);
       analogWrite(FR_MOT_EN_PIN, 0);
+
+      delay(10);    // delay to let motor start
+      SP_current = readSeatpanCurrent();
+      dtostrf(SP_current, 4, 3, buf);
+      Serial.print(F("SeatPan Current  = "));
+      Serial.print(buf);
+      Serial.println("A");
 
       if (forward == NOT_PRESSED) {
         state = STATE_IDLE;
@@ -239,6 +253,13 @@ void loop() {
       digitalWrite(FR_MOT_PH_PIN, PH_REV);
       analogWrite(FR_MOT_EN_PIN, 0);
 
+      delay(10);    // delay to let motor start
+      SP_current = readSeatpanCurrent();
+      dtostrf(SP_current, 4, 3, buf);
+      Serial.print(F("SeatPan Current  = "));
+      Serial.print(buf);
+      Serial.println("A");
+
       if (reverse==NOT_PRESSED) {
         state = STATE_IDLE;
         Serial.println("State => Idle");
@@ -254,6 +275,13 @@ void loop() {
       analogWrite(SP_MOT_EN_PIN, 0);
       digitalWrite(FR_MOT_PH_PIN, PH_REV);
       analogWrite(FR_MOT_EN_PIN, 255);
+
+      delay(10);    // delay to let motor start
+      FR_current = readFootrestCurrent();
+      dtostrf(FR_current, 4, 3, buf);
+      Serial.print(F("FootRest Current  = "));
+      Serial.print(buf);
+      Serial.println("A");
 
       if (reverse==NOT_PRESSED) {
         state = STATE_IDLE;
