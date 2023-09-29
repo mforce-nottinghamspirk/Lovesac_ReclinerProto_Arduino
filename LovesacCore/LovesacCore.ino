@@ -1,5 +1,5 @@
 // Lovesac_Core.ino
-// Nottingham Spirk, August 07, 2023
+// Nottingham Spirk, September 29, 2023
 //
 // This sketch contains the core fuctionality for exercising the
 // motors of the Lovesac Recliner Prototype Board.  The intent is
@@ -17,8 +17,8 @@
 // *******************************************************************
 // Hardware Pins
 // *******************************************************************
-#define SP_HOME_PIN     0   // input
-#define SP_LIMIT_PIN    1   // input
+//#define SP_HOME_PIN   0   // input, reserved for Debug UART
+//#define SP_LIMIT_PIN  1   // input, reserved for Debug UART
 #define SW1_PIN         2   // input, high = closed
 #define SW2_PIN         3   // input, high = closed
 #define unused_4_PIN    4
@@ -38,9 +38,11 @@
 // *******************************************************************
 // Constants
 // *******************************************************************
-#define ADC_VREF  3.3       // default AREF
+#define ADC_VREF  3.3       // default AREF (V)
 #define ADC_COUNT 1024.0    // 10-bit ADC
+#define ADC_SAMPLES 10      // samples for average
 #define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
+#define CUR_THRESH 0.020    // limit for "0" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
 #define PRESSED      1      // input switch state
@@ -51,6 +53,8 @@
 #define NOT_AT_HOME  0      // home position sensor state
 #define PH_FWD       1      // motor driver PH input = forward
 #define PH_REV       0      // motor driver PH input = reverse
+#define ACTIVE       1      // motor driver nSLEEP input = active/run
+#define SLEEP        0      // motor driver nSLEEP input = sleep/off
 
 // *******************************************************************
 // Global Variables
@@ -92,8 +96,8 @@ void setup() {
 
   Wire.begin();
 
-  pinMode(SP_HOME_PIN,  INPUT);
-  pinMode(SP_LIMIT_PIN, INPUT);
+//  pinMode(SP_HOME_PIN,  INPUT);
+//  pinMode(SP_LIMIT_PIN, INPUT);
   pinMode(FR_HOME_PIN,  INPUT);
   pinMode(FR_LIMIT_PIN, INPUT);
   pinMode(SW1_PIN, INPUT);
@@ -108,12 +112,12 @@ void setup() {
   pinMode(FR_MOT_EN_PIN,  OUTPUT);
   pinMode(FR_MOT_SLP_PIN, OUTPUT);
 
-  digitalWrite(SP_MOT_PH_PIN,  LOW);
+  digitalWrite(SP_MOT_PH_PIN,  PH_REV);
   digitalWrite(SP_MOT_EN_PIN,  LOW);
-  digitalWrite(SP_MOT_SLP_PIN, LOW);
-  digitalWrite(FR_MOT_PH_PIN,  LOW);
+  digitalWrite(SP_MOT_SLP_PIN, SLEEP);
+  digitalWrite(FR_MOT_PH_PIN,  PH_REV);
   digitalWrite(FR_MOT_EN_PIN,  LOW);
-  digitalWrite(FR_MOT_SLP_PIN, LOW);
+  digitalWrite(FR_MOT_SLP_PIN, SLEEP);
 
   getSeatpanOffset();
   getFootrestOffset();
@@ -153,33 +157,47 @@ void loop() {
 // Get the current measurement offset voltage for each motor
 // driver.  The offset is in ADC counts and will be saved in
 // global variables for later use by the measurement functions.
-// Note that this must be done with the motor disabled.
+// Note that this must be done with the motor awake but disabled.
 // *******************************************************************
 void getSeatpanOffset() {
+ 
+  // wake the motor driver
+  digitalWrite(SP_MOT_SLP_PIN, ACTIVE);
+
   // take 10 readings and sum them up
   SP_offset = 0;
-  for (int i = 10; i > 0; i--) {
+  for (int i = ADC_SAMPLES; i > 0; i--) {
     SP_offset += analogRead(SP_CUR_PIN);
     delay(10);
   }
 
+  // put the motor driver back to sleep
+  digitalWrite(SP_MOT_SLP_PIN, SLEEP);
+
   // get the average
-  SP_offset /= 10;
+  SP_offset /= ADC_SAMPLES;
 
   Serial.print(F("SeatPan Offset  = "));
   Serial.println(SP_offset);
 }
 
 void getFootrestOffset() {
+
+  // wake the motor driver
+  digitalWrite(FR_MOT_SLP_PIN, ACTIVE);
+
   // take 10 readings and sum them up
   FR_offset = 0;
-  for (int i = 10; i > 0; i--) {
-    FR_offset += analogRead(SP_CUR_PIN);
+  for (int i = ADC_SAMPLES; i > 0; i--) {
+    FR_offset += analogRead(FR_CUR_PIN);
     delay(10);
   }
 
+  // put the motor driver back to sleep
+  digitalWrite(FR_MOT_SLP_PIN, SLEEP);
+
   // get the average
-  FR_offset /= 10;
+  FR_offset /= ADC_SAMPLES;
 
   Serial.print(F("FootRest Offset = "));
   Serial.println(FR_offset);
@@ -189,11 +207,18 @@ void getFootrestOffset() {
 // *******************************************************************
 // Read the current for each motor.  The output is offset-corrected
 // and scaled to return current in Amperes.
+// ADC * 1.623A/V * 3.3Vref / 1024 = 5.23mA/bit resolution
 // *******************************************************************
 float readSeatpanCurrent() {
   float scaled = 0.0;
-  int ADCValue = analogRead(SP_CUR_PIN);
+  int ADCValue = 0;
+ 
+  for (int i = ADC_SAMPLES; i > 0; i--) {
+    ADCValue += analogRead(SP_CUR_PIN);
+    delay(1);
+  }
 
+  ADCValue /= ADC_SAMPLES;          // get the average (int)
   scaled = (ADCValue - SP_offset);  // eliminate the motor driver offset
   scaled *= MOTOR_CUR;              // multiply by motor driver A/V gain
   scaled *= ADC_VREF;               // multiply by ADC full scale range
@@ -203,8 +228,14 @@ float readSeatpanCurrent() {
 
 float readFootrestCurrent() {
   float scaled = 0.0;
-  int ADCValue = analogRead(FR_CUR_PIN);
+  int ADCValue = 0;
+ 
+  for (int i = ADC_SAMPLES; i > 0; i--) {
+    ADCValue += analogRead(FR_CUR_PIN);
+    delay(1);
+  }
 
+  ADCValue /= ADC_SAMPLES;          // get the average (int)
   scaled = (ADCValue - FR_offset);  // eliminate the motor driver offset
   scaled *= MOTOR_CUR;              // multiply by motor driver A/V gain
   scaled *= ADC_VREF;               // multiply by ADC full scale range
