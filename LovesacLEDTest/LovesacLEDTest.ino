@@ -259,6 +259,8 @@ float readFootrestCurrent() {
 void initPCA9685() {
   uint8_t channel;
 
+    LED_Port.setOutputMode(1);      // set Open Drain Mode
+    LED_Port.setOutputInvert(1);    // set Invert Mode
     for (channel = 0; channel < 16; channel++){ 
       LED_Port.setPWM(channel, 0x000);
     }
