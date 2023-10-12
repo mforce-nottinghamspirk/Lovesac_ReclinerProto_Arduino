@@ -147,17 +147,31 @@ void setup() {
 // Main Loop, continuously runs
 // *******************************************************************
 void loop() {
-  uint16_t Red, Green, Blue;
+  // uint16_t Red, Green, Blue;
 
-  Serial.println(F("Start Loop"));
-  for (Red = 0; Red < MAX_PWM; Red += 256) {
-    for (Green = 0; Green < MAX_PWM; Green += 256) {
-      for (Blue = 0; Blue < MAX_PWM; Blue += 256) {
-        SetLED(Red, Green, Blue);
-        delay(5);
-      }
-    }
-  }
+  // Serial.println(F("Start Loop"));
+  // for (Red = 0; Red < MAX_PWM; Red += 256) {
+  //   for (Green = 0; Green < MAX_PWM; Green += 256) {
+  //     for (Blue = 0; Blue < MAX_PWM; Blue += 256) {
+  //     }
+  //   }
+  // }
+
+  Serial.println(F("Teal 000 FFF DFF"));
+  SetLED(0x000, 0xFFF, 0x1FF);
+  delay(2500);
+  SetLED(0x000, 0x000, 0x000);
+  delay(500);
+  Serial.println(F("Red FFF 000 000"));
+  SetLED(0xFFF, 0x000, 0x000);
+  delay(2500);
+  SetLED(0x000, 0x000, 0x000);
+  delay(500);
+  Serial.println(F("Green 000 FFF 000"));
+  SetLED(0x000, 0xFFF, 0x000);
+  delay(2500);
+  SetLED(0x000, 0x000, 0x000);
+  delay(500);
 
 }  // loop()
 
