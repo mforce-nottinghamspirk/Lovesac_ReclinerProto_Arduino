@@ -157,20 +157,17 @@ void loop() {
   //   }
   // }
 
-  Serial.println(F("Teal 000 FFF DFF"));
-  SetLED(0x000, 0xFFF, 0x1FF);
+  SetLED(0x000, 0xFF0, 0x1F0);    // Teal
   delay(2500);
-  SetLED(0x000, 0x000, 0x000);
+  SetLED(0x000, 0x000, 0x000);    // off
   delay(500);
-  Serial.println(F("Red FFF 000 000"));
-  SetLED(0xFFF, 0x000, 0x000);
+  SetLED(0x3F0, 0x000, 0x000);    // Red
   delay(2500);
-  SetLED(0x000, 0x000, 0x000);
+  SetLED(0x000, 0x000, 0x000);    // off
   delay(500);
-  Serial.println(F("Green 000 FFF 000"));
-  SetLED(0x000, 0xFFF, 0x000);
+  SetLED(0x000, 0x3F0, 0x000);    // Green
   delay(2500);
-  SetLED(0x000, 0x000, 0x000);
+  SetLED(0x000, 0x000, 0x000);    // off
   delay(500);
 
 }  // loop()
