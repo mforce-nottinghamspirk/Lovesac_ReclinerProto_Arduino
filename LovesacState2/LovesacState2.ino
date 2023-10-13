@@ -15,8 +15,8 @@
 // *******************************************************************
 // Hardware Pins
 // *******************************************************************
-#define SP_HOME_PIN     0   // input, reserved for Debug UART
-#define SP_LIMIT_PIN    1   // input, reserved for Debug UART
+// #define SP_HOME_PIN     0   // input, reserved for Debug UART
+// #define SP_LIMIT_PIN    1   // input, reserved for Debug UART
 #define SW1_PIN         2   // input, high = closed
 #define SW2_PIN         3   // input, high = closed
 #define unused_4_PIN    4
@@ -107,8 +107,8 @@ void setup() {
   Serial.println(__DATE__ "  Compiler Version: " __VERSION__);
   Serial.println(F("*************************************"));
 
-  pinMode(SP_HOME_PIN,  INPUT);
-  pinMode(SP_LIMIT_PIN, INPUT);
+  // pinMode(SP_HOME_PIN,  INPUT);
+  // pinMode(SP_LIMIT_PIN, INPUT);
   pinMode(FR_HOME_PIN,  INPUT);
   pinMode(FR_LIMIT_PIN, INPUT);
   pinMode(SW1_PIN, INPUT);
@@ -148,8 +148,8 @@ void loop() {
   reverse = digitalRead(SW2_PIN);
 
   // read the limit switches
-  SP_limit = digitalRead(SP_LIMIT_PIN);
-  SP_home  = digitalRead(SP_HOME_PIN);
+  // SP_limit = digitalRead(SP_LIMIT_PIN);
+  // SP_home  = digitalRead(SP_HOME_PIN);
   FR_limit = digitalRead(FR_LIMIT_PIN);
   FR_home  = digitalRead(FR_HOME_PIN);
 
