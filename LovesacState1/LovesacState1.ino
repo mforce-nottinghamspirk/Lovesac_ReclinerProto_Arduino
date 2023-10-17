@@ -1,5 +1,5 @@
 // LovesacState1.ino
-// Nottingham Spirk, September 27, 2023
+// Nottingham Spirk, October 17, 2023
 //
 // This sketch implements a simplified state machine.
 //   no timeout monitoring
@@ -99,7 +99,8 @@ void setup() {
   while (!Serial) { delay(10); }
   Serial.begin(115200);
   Serial.println(F("*************************************"));
-  Serial.println(F("Lovesac Simple State Machine"));
+  Serial.println(F("Lovesac State Machine #1"));
+  Serial.println(F("Zero-Current Version"));
   Serial.print(F("Analog Samples = "));
   Serial.println(ADC_SAMPLES);
   Serial.println(__DATE__ "  Compiler Version: " __VERSION__);
