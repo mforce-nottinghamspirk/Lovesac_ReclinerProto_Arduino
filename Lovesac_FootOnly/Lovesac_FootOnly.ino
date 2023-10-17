@@ -10,6 +10,7 @@
 // Select "Arduino Pro or Pro Mini" in the boards manager.
 //
 
+#include <Wire.h>  // I2C communication
 
 // *******************************************************************
 // Hardware Pins
@@ -180,33 +181,47 @@ void loop() {
 // Get the current measurement offset voltage for each motor
 // driver.  The offset is in ADC counts and will be saved in
 // global variables for later use by the measurement functions.
-// Note that this must be done with the motor disabled.
+// Note that this must be done with the motor awake but disabled.
 // *******************************************************************
 void getSeatpanOffset() {
+ 
+  // wake the motor driver
+  digitalWrite(SP_MOT_SLP_PIN, ACTIVE);
+
   // take 10 readings and sum them up
   SP_offset = 0;
-  for (int i = 10; i > 0; i--) {
+  for (int i = ADC_SAMPLES; i > 0; i--) {
     SP_offset += analogRead(SP_CUR_PIN);
     delay(10);
   }
 
+  // put the motor driver back to sleep
+  digitalWrite(SP_MOT_SLP_PIN, SLEEP);
+
   // get the average
-  SP_offset /= 10;
+  SP_offset /= ADC_SAMPLES;
 
   Serial.print(F("SeatPan Offset  = "));
   Serial.println(SP_offset);
 }
 
 void getFootrestOffset() {
+
+  // wake the motor driver
+  digitalWrite(FR_MOT_SLP_PIN, ACTIVE);
+
   // take 10 readings and sum them up
   FR_offset = 0;
-  for (int i = 10; i > 0; i--) {
-    FR_offset += analogRead(SP_CUR_PIN);
+  for (int i = ADC_SAMPLES; i > 0; i--) {
+    FR_offset += analogRead(FR_CUR_PIN);
     delay(10);
   }
 
+  // put the motor driver back to sleep
+  digitalWrite(FR_MOT_SLP_PIN, SLEEP);
+
   // get the average
-  FR_offset /= 10;
+  FR_offset /= ADC_SAMPLES;
 
   Serial.print(F("FootRest Offset = "));
   Serial.println(FR_offset);
@@ -216,11 +231,18 @@ void getFootrestOffset() {
 // *******************************************************************
 // Read the current for each motor.  The output is offset-corrected
 // and scaled to return current in Amperes.
+// ADC * 1.623A/V * 3.3Vref / 1024 = 5.23mA/bit resolution
 // *******************************************************************
 float readSeatpanCurrent() {
   float scaled = 0.0;
-  int ADCValue = analogRead(SP_CUR_PIN);
+  int ADCValue = 0;
+ 
+  for (int i = ADC_SAMPLES; i > 0; i--) {
+    ADCValue += analogRead(SP_CUR_PIN);
+    delay(1);
+  }
 
+  ADCValue /= ADC_SAMPLES;          // get the average (int)
   scaled = (ADCValue - SP_offset);  // eliminate the motor driver offset
   scaled *= MOTOR_CUR;              // multiply by motor driver A/V gain
   scaled *= ADC_VREF;               // multiply by ADC full scale range
@@ -230,8 +252,14 @@ float readSeatpanCurrent() {
 
 float readFootrestCurrent() {
   float scaled = 0.0;
-  int ADCValue = analogRead(FR_CUR_PIN);
+  int ADCValue = 0;
+ 
+  for (int i = ADC_SAMPLES; i > 0; i--) {
+    ADCValue += analogRead(FR_CUR_PIN);
+    delay(1);
+  }
 
+  ADCValue /= ADC_SAMPLES;          // get the average (int)
   scaled = (ADCValue - FR_offset);  // eliminate the motor driver offset
   scaled *= MOTOR_CUR;              // multiply by motor driver A/V gain
   scaled *= ADC_VREF;               // multiply by ADC full scale range
