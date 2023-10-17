@@ -1,5 +1,5 @@
 // Lovesac_FootOnly.ino
-// Nottingham Spirk, August 07, 2023
+// Nottingham Spirk, October 17, 2023
 //
 // This sketch uses the switch inputs to run the FootRest motor 
 // forward and reverse.
@@ -10,13 +10,12 @@
 // Select "Arduino Pro or Pro Mini" in the boards manager.
 //
 
-#include <Wire.h>  // I2C communication
 
 // *******************************************************************
 // Hardware Pins
 // *******************************************************************
-#define SP_HOME_PIN     0   // input
-#define SP_LIMIT_PIN    1   // input
+// #define SP_HOME_PIN     0   // input, reserved for Debug UART
+// #define SP_LIMIT_PIN    1   // input, reserved for Debug UART
 #define SW1_PIN         2   // input, high = closed
 #define SW2_PIN         3   // input, high = closed
 #define unused_4_PIN    4
@@ -36,9 +35,12 @@
 // *******************************************************************
 // Constants
 // *******************************************************************
-#define ADC_VREF  3.3       // default AREF
+#define ADC_VREF  3.3       // default AREF (V)
 #define ADC_COUNT 1024.0    // 10-bit ADC
+#define ADC_SAMPLES 10      // samples for average
 #define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
+#define CUR_THRESH 0.020    // limit for "0" current (A)
+#define CUR_OBSTR  8.500    // limit for "obstructed" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
 #define PRESSED      1      // input switch state
@@ -49,6 +51,8 @@
 #define NOT_AT_HOME  0      // home position sensor state
 #define PH_FWD       1      // motor driver PH input = forward
 #define PH_REV       0      // motor driver PH input = reverse
+#define ACTIVE       1      // motor driver nSLEEP input = active/run
+#define SLEEP        0      // motor driver nSLEEP input = sleep/off
 
 // *******************************************************************
 // Global Variables
@@ -90,8 +94,8 @@ void setup() {
 
   Wire.begin();
 
-  pinMode(SP_HOME_PIN,  INPUT);
-  pinMode(SP_LIMIT_PIN, INPUT);
+  // pinMode(SP_HOME_PIN,  INPUT);
+  // pinMode(SP_LIMIT_PIN, INPUT);
   pinMode(FR_HOME_PIN,  INPUT);
   pinMode(FR_LIMIT_PIN, INPUT);
   pinMode(SW1_PIN, INPUT);
@@ -106,12 +110,12 @@ void setup() {
   pinMode(FR_MOT_EN_PIN,  OUTPUT);
   pinMode(FR_MOT_SLP_PIN, OUTPUT);
 
-  digitalWrite(SP_MOT_PH_PIN,  LOW);
+  digitalWrite(SP_MOT_PH_PIN,  PH_REV);
   digitalWrite(SP_MOT_EN_PIN,  LOW);
-  digitalWrite(SP_MOT_SLP_PIN, LOW);
-  digitalWrite(FR_MOT_PH_PIN,  LOW);
+  digitalWrite(SP_MOT_SLP_PIN, SLEEP);
+  digitalWrite(FR_MOT_PH_PIN,  PH_REV);
   digitalWrite(FR_MOT_EN_PIN,  LOW);
-  digitalWrite(FR_MOT_SLP_PIN, LOW);
+  digitalWrite(FR_MOT_SLP_PIN, SLEEP);
 
   getSeatpanOffset();
   getFootrestOffset();
