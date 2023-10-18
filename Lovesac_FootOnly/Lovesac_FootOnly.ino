@@ -39,7 +39,7 @@
 #define ADC_VREF  3.3       // default AREF (V)
 #define ADC_COUNT 1024.0    // 10-bit ADC
 #define ADC_SAMPLES 10      // samples for average
-#define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
+#define MOTOR_CUR  4.762    // motor driver SO output scaling (A/V)
 #define CUR_THRESH 0.020    // limit for "0" current (A)
 #define CUR_OBSTR  8.500    // limit for "obstructed" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
@@ -128,8 +128,9 @@ void setup() {
 // Main Loop, continuously runs
 // *******************************************************************
 void loop() {
+  float tempFloat;
 
-  digitalWrite(FR_MOT_SLP_PIN, 0);
+  digitalWrite(FR_MOT_SLP_PIN, SLEEP);
   analogWrite(FR_MOT_EN_PIN,   0);
 
   forward  = digitalRead(SW1_PIN);
@@ -148,9 +149,14 @@ void loop() {
         timeout--;
 
         // run the motor forward
-        digitalWrite(FR_MOT_SLP_PIN, 1);
+        digitalWrite(FR_MOT_SLP_PIN, ACTIVE);
         digitalWrite(FR_MOT_PH_PIN,  PH_FWD);
         analogWrite(FR_MOT_EN_PIN,   255);
+        tempFloat = readFootrestCurrent();
+        dtostrf(tempFloat, 4, 3, buf);
+        Serial.print(F("FR = "));
+        Serial.print(buf);
+        Serial.println("A");
         delay(50);
         }
 
@@ -164,9 +170,14 @@ void loop() {
         timeout--;
 
         // run the motor reverse
-        digitalWrite(FR_MOT_SLP_PIN, 1);
+        digitalWrite(FR_MOT_SLP_PIN, ACTIVE);
         digitalWrite(FR_MOT_PH_PIN,  PH_REV);
         analogWrite(FR_MOT_EN_PIN,   255);
+        tempFloat = readFootrestCurrent();
+        dtostrf(tempFloat, 4, 3, buf);
+        Serial.print(F("FR = "));
+        Serial.print(buf);
+        Serial.println("A");
         delay(50);
         }
 
@@ -231,7 +242,7 @@ void getFootrestOffset() {
 // *******************************************************************
 // Read the current for each motor.  The output is offset-corrected
 // and scaled to return current in Amperes.
-// ADC * 1.623A/V * 3.3Vref / 1024 = 5.23mA/bit resolution
+// ADC * 4.762A/V * 3.3Vref / 1024 = 15.35mA/bit resolution
 // *******************************************************************
 float readSeatpanCurrent() {
   float scaled = 0.0;
