@@ -14,8 +14,8 @@
 // *******************************************************************
 // Hardware Pins
 // *******************************************************************
-#define SP_HOME_PIN     0   // input
-#define SP_LIMIT_PIN    1   // input
+// #define SP_HOME_PIN     0   // input, reserved for Debug UART
+// #define SP_LIMIT_PIN    1   // input, reserved for Debug UART
 #define SW1_PIN         2   // input, high = closed
 #define SW2_PIN         3   // input, high = closed
 #define unused_4_PIN    4
@@ -35,10 +35,10 @@
 // *******************************************************************
 // Constants
 // *******************************************************************
-#define ADC_VREF  3.3       // default AREF
+#define ADC_VREF     3.3    // default AREF
 #define ADC_COUNT 1024.0    // 10-bit ADC
-#define ADC_SAMPLES 100     // samples for average
-#define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
+#define ADC_SAMPLES  100    // samples for average
+#define MOTOR_CUR   6.25    // motor driver SO output scaling (A/V)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
 #define PRESSED      1      // input switch state
@@ -94,8 +94,8 @@ void setup() {
 
   Wire.begin();
 
-  pinMode(SP_HOME_PIN,  INPUT);
-  pinMode(SP_LIMIT_PIN, INPUT);
+  // pinMode(SP_HOME_PIN,  INPUT);
+  // pinMode(SP_LIMIT_PIN, INPUT);
   pinMode(FR_HOME_PIN,  INPUT);
   pinMode(FR_LIMIT_PIN, INPUT);
   pinMode(SW1_PIN, INPUT);

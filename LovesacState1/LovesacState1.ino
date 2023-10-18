@@ -36,10 +36,10 @@
 // *******************************************************************
 // Constants
 // *******************************************************************
-#define ADC_VREF  3.3       // default AREF (V)
+#define ADC_VREF     3.3    // default AREF (V)
 #define ADC_COUNT 1024.0    // 10-bit ADC
-#define ADC_SAMPLES 10      // samples for average
-#define MOTOR_CUR 1.623     // motor driver SO output scaling (A/V)
+#define ADC_SAMPLES   10    // samples for average
+#define MOTOR_CUR   6.25    // motor driver SO output scaling (A/V)
 #define CUR_THRESH 0.020    // limit for "0" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
 #define BAT_VOLT  0x34      // battery voltage register address ***tbd
