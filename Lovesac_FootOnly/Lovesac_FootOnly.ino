@@ -36,10 +36,10 @@
 // *******************************************************************
 // Constants
 // *******************************************************************
-#define ADC_VREF  3.3       // default AREF (V)
+#define ADC_VREF     3.3    // default AREF (V)
 #define ADC_COUNT 1024.0    // 10-bit ADC
-#define ADC_SAMPLES 10      // samples for average
-#define MOTOR_CUR  4.762    // motor driver SO output scaling (A/V)
+#define ADC_SAMPLES   10    // samples for average
+#define MOTOR_CUR   6.25    // motor driver SO output scaling (A/V)
 #define CUR_THRESH 0.020    // limit for "0" current (A)
 #define CUR_OBSTR  8.500    // limit for "obstructed" current (A)
 #define BAT_ADDR  0x12      // battery manager I2C address ***tbd
@@ -242,7 +242,7 @@ void getFootrestOffset() {
 // *******************************************************************
 // Read the current for each motor.  The output is offset-corrected
 // and scaled to return current in Amperes.
-// ADC * 4.762A/V * 3.3Vref / 1024 = 15.35mA/bit resolution
+// ADC * 6.25A/V * 3.3Vref / 1024 = 20.14mA/bit resolution
 // *******************************************************************
 float readSeatpanCurrent() {
   float scaled = 0.0;
