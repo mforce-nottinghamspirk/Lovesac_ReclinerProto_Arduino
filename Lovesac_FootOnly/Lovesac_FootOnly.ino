@@ -10,7 +10,14 @@
 // Select "Arduino Pro or Pro Mini" in the boards manager.
 //
 
+#define TIMER_INTERRUPT_DEBUG     2
+#define _TIMERINTERRUPT_LOGLEVEL_ 0
+#define USE_TIMER_1 true
+#define USE_TIMER_2 false
+#define USE_TIMER_3 false
+#include "TimerInterrupt.h"
 #include <Wire.h>  // I2C communication
+
 
 // *******************************************************************
 // Hardware Pins
@@ -55,6 +62,11 @@
 #define ACTIVE       1      // motor driver nSLEEP input = active/run
 #define SLEEP        0      // motor driver nSLEEP input = sleep/off
 
+#define TIMER1_INTERVAL_MS    3000
+#define TIMER1_FREQUENCY      (float) (1000.0f / TIMER1_INTERVAL_MS)
+#define TIMER1_DURATION_MS    0
+
+
 // *******************************************************************
 // Global Variables
 // *******************************************************************
@@ -69,7 +81,8 @@ int   SP_limit = NOT_AT_LIMIT;
 int   FR_limit = NOT_AT_LIMIT;
 int   SP_home  = NOT_AT_HOME;
 int   FR_home  = NOT_AT_HOME;
-int   timeout  = 0;
+int   timeout  = false;
+
 
 // *******************************************************************
 // Function Prototypes
@@ -79,6 +92,12 @@ void  getFootrestOffset(void);
 float readSeatpanCurrent(void);
 float readFootrestCurrent(void);
 void  readBattery(void);
+
+void TimerHandler1(void)
+{
+  Serial.println(F("timeout"));
+  timeout = true;  
+}
 
 
 // *******************************************************************
@@ -90,8 +109,23 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("*************************************"));
   Serial.println(F("Lovesac FootRest Only Demo"));
-  Serial.println(__DATE__ "  Compiler Version: " __VERSION__);
+  Serial.println(__DATE__);
+  Serial.println("Compiler Version: " __VERSION__);
+  Serial.println(TIMER_INTERRUPT_VERSION);
+  Serial.println(BOARD_TYPE);
+  Serial.print(F("CPU Frequency: "));
+  Serial.print(F_CPU / 1000000);
+  Serial.println(F(" MHz"));
   Serial.println(F("*************************************"));
+
+  ITimer1.init();
+  if (ITimer1.attachInterruptInterval(TIMER1_INTERVAL_MS, TimerHandler1, TIMER1_DURATION_MS))
+  {
+    Serial.print(F("Starting ITimer1, millis() = ")); 
+    Serial.println(millis());
+  }
+  else
+    Serial.println(F("Can't set ITimer1"));
 
   Wire.begin();
 
@@ -129,7 +163,9 @@ void setup() {
 // *******************************************************************
 void loop() {
   float tempFloat;
+  int   oneShot;
 
+  ITimer1.stopTimer();
   digitalWrite(FR_MOT_SLP_PIN, SLEEP);
   analogWrite(FR_MOT_EN_PIN,   0);
 
@@ -137,16 +173,35 @@ void loop() {
   FR_limit = digitalRead(FR_LIMIT_PIN);
   reverse  = digitalRead(SW2_PIN);
   FR_home  = digitalRead(FR_HOME_PIN);
-  timeout  = 200;    // 200 * 50 = 10 sec 
+  oneShot  = false;
+
+  // wait for the button to be released if a timeout occurred
+  while ( ((forward==PRESSED) || (reverse==PRESSED)) &&
+          (timeout==true) ) {
+        Serial.println("waiting for release");
+        digitalWrite(FR_MOT_SLP_PIN, SLEEP);
+        analogWrite(FR_MOT_EN_PIN,   0);
+        forward = digitalRead(SW1_PIN);
+        reverse = digitalRead(SW2_PIN);
+        delay(50);
+        }
+
+  timeout = false;  
 
   while ( (forward==PRESSED) &&
           (FR_limit==NOT_AT_LIMIT) &&
-          (timeout>0) ) {
+          (timeout==false) ) {
+
+        // start the timer if this is the first time in
+        if (oneShot == false) {
+          Serial.println("forward leading edge");
+          ITimer1.restartTimer();
+          oneShot = true;
+        }
 
         // read the inputs  
         forward  = digitalRead(SW1_PIN);
         FR_limit = digitalRead(FR_LIMIT_PIN);
-        timeout--;
 
         // run the motor forward
         digitalWrite(FR_MOT_SLP_PIN, ACTIVE);
@@ -156,18 +211,24 @@ void loop() {
         dtostrf(tempFloat, 4, 3, buf);
         Serial.print(F("FR = "));
         Serial.print(buf);
-        Serial.println("A");
+        Serial.println("A - fwd");
         delay(50);
         }
 
    while ( (reverse==PRESSED) &&
            (FR_home==NOT_AT_HOME) &&
-           (timeout>0) ) {
+           (timeout==false) ) {
+
+        // start the timer if this is the first time in
+        if (oneShot == false) {
+          Serial.println("reverse leading edge");
+          ITimer1.restartTimer();
+          oneShot = true;
+        }
 
         // read the inputs  
         reverse = digitalRead(SW2_PIN);
         FR_home = digitalRead(FR_HOME_PIN);
-        timeout--;
 
         // run the motor reverse
         digitalWrite(FR_MOT_SLP_PIN, ACTIVE);
@@ -177,7 +238,7 @@ void loop() {
         dtostrf(tempFloat, 4, 3, buf);
         Serial.print(F("FR = "));
         Serial.print(buf);
-        Serial.println("A");
+        Serial.println("A - rev");
         delay(50);
         }
 
